@@ -4,12 +4,13 @@ _BALCONIES = true;
 _WINDOWS = true;
 _VOID = false;
 _LOVINGTEXT = true;
+_PLAQUE = false;
 
 // floor counts
-botfl = 4;
+botfl = 7;
 
 // outer wall length
-length = 60;
+length = 100;
 // depth from point to back wall
 depth = cos(30)*length;
 // the top makes a 30 degree angle from back to the point
@@ -92,7 +93,13 @@ windows = [
                 ]],
             [4, [[9,49],[1,34],[1,23],[6,10]
                 ]],
-            //[4, [for (i = [0:10]) [0, 10*i+10]]],
+            [5, [[2,90],[9,49],[2,32],[1,23]
+                ]],
+            [6, [[9,49],[5,28],[11,7]
+                ]],
+            [7, [[1,80],[1,76],[1,70],[1,60],[1,52],[1,28],[1,17],[1,9]
+                ]],
+            //[7, [for (i = [0:10]) [0, 10*i+10]]],
             //[0, [for (i = [0:6]) [i, 10*i+10]]],
             //[1, [for (i = [0:6]) [i, 10*i+10]]]
             ],
@@ -190,8 +197,12 @@ difference() {
             translate([0,0,bot_size - fs*wins[0]])
             winrow(wins[1]);
         }
-    };      
-            
+    };
+
+    if(_PLAQUE) {
+        rotate(240,[0,0,1])
+        cube([cos(30)*length*2 - top_perimeter_wall*2, length*2, length*4],center=true);
+    }
 }
 
 *tapertower(200, 100, 20)
@@ -280,6 +291,18 @@ module winrow(ws) {
             w = fs*3/10;
             translate([0,-w/2,-fs*0.2])
             cube45([window_depth,w,h]);
+        } else if(t == 11) { // 3x8 grid
+            //bsize = length*4/400;
+            size = fs/2;
+            bsize = size/8;
+            *translate([0,0,-size/2])
+            cube45([window_depth,size,size]);
+            translate([0,0,fs/8])
+            translate([0,0,-size/2])
+            for(x = [0:bsize*2*.8:bsize*7*2*.8], y = [bsize*2.5:bsize*2:bsize*7]) {
+                translate([0,x,y])
+                cube45([window_depth,bsize,bsize]);
+            }
         }
     }
 };
