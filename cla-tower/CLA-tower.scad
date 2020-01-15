@@ -97,7 +97,7 @@ windows = [
                 ]],
             [6, [[9,49],[5,28],[11,7]
                 ]],
-            [7, [[1,80],[1,76],[1,70],[1,60],[1,52],[1,28],[1,17],[1,9]
+            [7, [[1,80],[1,76],[1,70],[1,60],[1,1052],[1,28],[1,17],[1,9]
                 ]],
             //[7, [for (i = [0:10]) [0, 10*i+10]]],
             //[0, [for (i = [0:6]) [i, 10*i+10]]],
@@ -218,6 +218,10 @@ module tapertower(h, w, a) {
     children(0);
 }
 
+module window_cube(s) {
+    cube60(s);
+}
+
 module cube45(s) {
     *cube(s);
     x = s[1];
@@ -236,6 +240,25 @@ module cube45(s) {
     square([x,y]);
 }
 
+module cube60(s) {
+    *cube(s);
+    x = s[1];
+    y = s[2];
+    z = s[0];
+    xscale = max((x - z*2*sqrt(3))/x, 0.001);
+    yscale = max((y - z*2*sqrt(3))/y, 0.001);
+    if(xscale <= 0 || yscale <= 0) {
+        echo(x, y, z, xscale, yscale);
+    }
+    rotate(90,[0,0,1])
+    rotate(90,[1,0,0])
+    translate([x/2, y/2])
+    linear_extrude(z, scale=[xscale,yscale])
+    translate([-x/2, -y/2])
+    square([x,y]);
+}
+
+
 module winrow(ws) {
     for(w = ws) {
         t = w[0];
@@ -243,65 +266,65 @@ module winrow(ws) {
         translate([0,length*pos/100,0])
         if(t == 0) { // tall thin
             translate([0,0,-fs*2/5/2])
-            cube45([window_depth,length*2/400,fs*2/5]);
+            window_cube([window_depth,length*2/400,fs*2/5]);
         } else if(t == 1) { // center narrow
-            cube45([window_depth,length*7/400,fs*1/5]);
+            window_cube([window_depth,length*7/400,fs*1/5]);
         } else if(t == 2) { // center medium
-            cube45([window_depth,length*15/400,fs*1/5]);
+            window_cube([window_depth,length*15/400,fs*1/5]);
         } else if(t == 3) { // high wide thin
             translate([0,0,fs*2/5/2])
-            cube45([window_depth,length*27/400,fs*1/20]);
+            window_cube([window_depth,length*27/400,fs*1/20]);
         } else if(t == 4) { // high narrow
             translate([0,0,fs*1/10])
-            cube45([window_depth,length*7/400,fs*1/5]);
+            window_cube([window_depth,length*7/400,fs*1/5]);
         } else if(t == 5) { // center wider
-            cube45([window_depth,length*20/400,fs*1/5]);
+            window_cube([window_depth,length*20/400,fs*1/5]);
         } else if(t == 6) { // 4 grid
             //bsize = length*4/400;
             size = fs/2;
             bsize = size/7;
             *translate([0,0,-size/2])
-            cube45([window_depth,size,size]);
+            window_cube([window_depth,size,size]);
             translate([0,0,fs/8])
             translate([0,0,-size/2])
             for(x = [0:bsize*2*.8:size*.8], y = [0:bsize*2*.8:size*.8]) {
                 translate([0,x,y])
-                cube45([window_depth,bsize,bsize]);
+                window_cube([window_depth,bsize,bsize]);
             }
         } else if(t == 7) { // high wider
             translate([0,0,fs*1/5/2])
-            cube45([window_depth,length*23/400,fs*1/5]);
+            window_cube([window_depth,length*23/400,fs*1/5]);
         } else if(t == 8) { // high medium
             translate([0,0,fs*1/5/2])
-            cube45([window_depth,length*15/400,fs*1/5]);
+            window_cube([window_depth,length*15/400,fs*1/5]);
         } else if(t == 9) { // 19 grid
             //bsize = length*4/400;
             size = fs/2;
             bsize = size/8;
             *translate([0,0,-size/2])
-            cube45([window_depth,size,size]);
+            window_cube([window_depth,size,size]);
             translate([0,0,fs/8])
             translate([0,0,-size/2])
             for(x = [0:bsize*2*.8:bsize*18*2*.8], y = [0:bsize*2:bsize*7]) {
                 translate([0,x,y])
-                cube45([window_depth,bsize,bsize]);
+                window_cube([window_depth,bsize,bsize]);
             }
         } else if(t == 10) { // DOORS
             h = fs*4/10;
             w = fs*3/10;
             translate([0,-w/2,-fs*0.2])
-            cube45([window_depth,w,h]);
+            window_cube([window_depth,w,h]);
         } else if(t == 11) { // 3x8 grid
             //bsize = length*4/400;
             size = fs/2;
             bsize = size/8;
             *translate([0,0,-size/2])
-            cube45([window_depth,size,size]);
+            window_cube([window_depth,size,size]);
             translate([0,0,fs/8])
             translate([0,0,-size/2])
             for(x = [0:bsize*2*.8:bsize*7*2*.8], y = [bsize*2.5:bsize*2:bsize*7]) {
                 translate([0,x,y])
-                cube45([window_depth,bsize,bsize]);
+                window_cube([window_depth,bsize,bsize]);
             }
         }
     }
