@@ -77,7 +77,13 @@ windows = [
                 ]],
             [4, [[1,12],[1,20],[1,31],[1,37],[2,41],[4,48],[1,65],[4,75],[6,80]
                 ]],
-            //[4, [for (i = [0:10]) [0, 10*i+10]]]
+            [5, [[1,14],[1,22],[8,29],[2,36],[1,42.5],[2,47],[2,65],[4,76],[5,84]
+                ]],
+            [6, [[12,8.5],[13,20],[12,26],[2,40],[2,48],[12,65],[13,76],[1,83],[2,87]
+                ]],
+            [7, [[1,21],[1,29],[1,33],[1,43],[1,50],[1,69],[1,77],[1,83],[1,94]
+                ]],
+            //[7, [for (i = [0:10]) [0, 10*i+10]]]
             ],
         ],
         [ 240,
@@ -323,6 +329,30 @@ module winrow(ws) {
             translate([0,0,fs/8])
             translate([0,0,-size/2])
             for(x = [0:bsize*2*.8:bsize*7*2*.8], y = [bsize*2.5:bsize*2:bsize*7]) {
+                translate([0,x,y])
+                window_cube([window_depth,bsize,bsize]);
+            }
+        } else if(t == 12) { // 3x5 grid
+            //bsize = length*4/400;
+            size = fs/2;
+            bsize = size/8;
+            *translate([0,0,-size/2])
+            window_cube([window_depth,size,size]);
+            translate([0,0,fs/8])
+            translate([0,0,-size/2])
+            for(x = [0:bsize*2*.8:bsize*4*2*.8], y = [bsize*2.5:bsize*2:bsize*7]) {
+                translate([0,x,y])
+                window_cube([window_depth,bsize,bsize]);
+            }
+        } else if(t == 13) { // 3x2 grid
+            //bsize = length*4/400;
+            size = fs/2;
+            bsize = size/8;
+            *translate([0,0,-size/2])
+            window_cube([window_depth,size,size]);
+            translate([0,0,fs/8])
+            translate([0,0,-size/2])
+            for(x = [0:bsize*2*.8:bsize*1*2*.8], y = [bsize*2.5:bsize*2:bsize*7]) {
                 translate([0,x,y])
                 window_cube([window_depth,bsize,bsize]);
             }
