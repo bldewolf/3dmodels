@@ -1,16 +1,21 @@
 
 // handy flags
 _BALCONIES = true;
+// non-top balconies have pillars that cause trapped support material, this disables the pillaring
+_PRINTABLE_BALCONIES = false;
 _WINDOWS = true;
-_VOID = false;
+_VOID = true;
 _LOVINGTEXT = true;
-_PLAQUE = false;
+_STENCIL = false;
+_CHOPPA = true;
 
 // floor counts
 botfl = 7;
 
 // outer wall length
-length = 100;
+length = 275;
+//length = 8  *0.32*5*2.8/sin(30);
+// fs = length*sin(30)/2.8
 // depth from point to back wall
 depth = cos(30)*length;
 // the top makes a 30 degree angle from back to the point
@@ -19,10 +24,14 @@ top_hole_steps = 16;
 top_hole_nose_inset = top_size*3/20;
 top_hole_size = top_size - top_hole_nose_inset*(1+cos(30));
 top_perimeter_wall = max(length/50, 1);
-
+step_h = (depth - top_hole_nose_inset)*sin(30)/top_hole_steps;
+step_l = tan(30)*(depth - top_hole_nose_inset)/2/top_hole_steps;
+void_wall = min(top_perimeter_wall,2);
 // floor size
 fs = top_size / 2.8;
+choppa_stacker = min(fs/2,10);
 
+// this is not actually the bottom size.  I should get rid of this
 bot_size = (botfl + 0.2)*fs;
 
 corner_whi = fs/3;
@@ -31,14 +40,16 @@ corner_wout =  1.1;
 
 void_taper = 0;
 // let the taper grow up as long as we don't hit the balcony
-void_taper_gains = -fs/2;
+//void_taper_gains = -fs/2;
+// just kidding, let's leave just enough to socket safely
+void_taper_gains = -fs+choppa_stacker+1;
 //void_taper_gains = (top_hole_nose_inset*2 - top_perimeter_wall)*tan(void_taper) - fs*0.2 - top_perimeter_wall;
 //void_taper_gains = fs*0.75;
 
 
 window_depth = min(top_perimeter_wall/3,.5);
 
-echo(top_size, top_hole_size, top_hole_nose_inset, top_perimeter_wall, window_depth);
+echo(top_size, top_hole_size, top_hole_nose_inset, top_perimeter_wall, window_depth, fs);
 
 // left middle right facing point
 // top down yeehaw
@@ -116,74 +127,210 @@ windows = [
         ]
     ];
 
-difference() {
-    union() {
-        translate([0,0,bot_size - 0.01])
-        top();
-        base();
-    }
-    
-    // top balcony
-    if(_BALCONIES)
-    color("brown")
-    translate([0,0,botfl*fs - fs*0.2])
-    intersection() {
-        linear_extrude(top_size)
-        offset(delta=-top_perimeter_wall)
-        polygon([[0,0],
-        [length*sin(60),length*cos(60)],
-        [0,length]]);
-        
-        linear_extrude(top_size)
-        union() {
-            translate([0,length/3 * 2])
-            square([top_hole_nose_inset*2 + top_perimeter_wall,length/3]);
-            square([top_hole_nose_inset*2 + top_perimeter_wall,length/3]);
-            square([top_hole_nose_inset + top_perimeter_wall,length]);
-        };
-    };
-    
-    // downslope to the balcony
-    color("lime")
-    translate([0,0,bot_size])
+module CLA() {
     difference() {
-        linear_extrude(top_size)
-        offset(delta=-top_perimeter_wall)
-        polygon([[0,0],
-        [length*sin(60),length*cos(60)],
-        [0,length]]);
-        
-        translate([0,0,-top_perimeter_wall/4])
-        rotate(60,[0,1,0])
-        //translate([-length,0,0])
-        cube([length,length,length*2]);
-    };
-    
-    // corners
-    if(_BALCONIES)
-    for(c = corners) {
-        translate([0,0,bot_size - fs*c[0]]) {
-            corner(c[1][0]);
-            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
-            rotate(120,[0,0,1])
-            translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
-            corner(c[1][1]);
-            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
-            rotate(240,[0,0,1])
-            translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
-            corner(c[1][2]);
+        union() {
+            translate([0,0,bot_size - 0.01])
+            top();
+            base();
         }
-    };
-    
-    // space-saving void
-    if(_VOID)
-    translate([0,0,-0.01])
-    translate([length/2/sin(60)*sin(30) + top_hole_nose_inset,length/2/sin(60)*cos(30),0])
-    //linear_extrude(bot_size - fs/2)
-    tapertower(bot_size + void_taper_gains, length/sin(60)*sin(30), void_taper)
-    translate([-length/2/sin(60)*sin(30) - top_hole_nose_inset,-length/2/sin(60)*cos(30),0])
-    offset(r=top_perimeter_wall, $fn=20)
-    offset(r=-top_perimeter_wall*2)
+        
+        // top balcony
+        if(_BALCONIES)
+        color("brown")
+        translate([0,0,botfl*fs-0.01])
+        intersection() {
+            linear_extrude(top_size)
+            offset(delta=-top_perimeter_wall)
+            polygon([[0,0],
+            [length*sin(60),length*cos(60)],
+            [0,length]]);
+            
+            linear_extrude(top_size)
+            union() {
+                translate([0,length/3 * 2])
+                square([top_hole_nose_inset*2 + top_perimeter_wall,length/3]);
+                square([top_hole_nose_inset*2 + top_perimeter_wall,length/3]);
+                square([top_hole_nose_inset + top_perimeter_wall,length]);
+            };
+        };
+
+        // nose balcony chop
+        if(_BALCONIES)
+        color("brown")
+        translate([0,0,botfl*fs - 0.01])
+        intersection() {
+            linear_extrude(top_size)
+            offset(delta=-top_perimeter_wall)
+            polygon([[0,0],
+                [length*sin(60),length*cos(60)],
+                [0,length]]);
+            
+            linear_extrude(top_size)
+            translate([depth - top_hole_nose_inset - 0.01 - step_h*3,0])
+            square([length,length]);
+        };
+        
+        // downslope to the balcony
+        color("lime")
+        translate([0,0,bot_size])
+        difference() {
+            linear_extrude(top_size)
+            offset(delta=-top_perimeter_wall)
+            polygon([[0,0],
+            [length*sin(60),length*cos(60)],
+            [0,length]]);
+            
+            translate([0,0,-top_perimeter_wall/4])
+            rotate(60,[0,1,0])
+            //translate([-length,0,0])
+            cube([length,length,length*2]);
+        };
+        
+        // corners
+        if(_BALCONIES)
+        for(c = corners) {
+            translate([0,0,bot_size - fs*c[0]]) {
+                corner(c[1][0]);
+                translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
+                rotate(120,[0,0,1])
+                translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
+                corner(c[1][1]);
+                translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
+                rotate(240,[0,0,1])
+                translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
+                corner(c[1][2]);
+            }
+        };
+        
+        // space-saving void
+        if(_VOID)
+        translate([0,0,-0.01])
+        translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),(_LOVINGTEXT?1.2:0)])
+        //linear_extrude(bot_size - fs/2)
+        tapertower(botfl*fs + void_taper_gains + (_LOVINGTEXT?-1.2:0), length/sin(60)*sin(30), void_taper)
+        translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
+        void_hole();
+            
+        // windows
+        if(_WINDOWS)
+        for(side = windows) {
+            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
+            rotate(side[0],[0,0,1])
+            translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
+            for(wins = side[1]) {
+                translate([0,0,bot_size - fs*wins[0]])
+                winrow(wins[1]);
+            }
+        };
+        
+        if(_WINDOWS && _BALCONIES)
+        translate([top_hole_nose_inset + top_perimeter_wall,0,botfl*fs+fs/4])
+        winrow([[10,50]])
+        if(_STENCIL) {
+            rotate(240,[0,0,1])
+            cube([cos(30)*length*2 - top_perimeter_wall*2, length*2, length*4],center=true);
+        }
+    }
+
+    // registrar's silhouette
+    *translate([-0.01,length,0])
+    rotate(-90,[0,0,1])
+    rotate(90,[1,0,0])
+    linear_extrude(top_perimeter_wall)
+    polygon([[0,0],
+    [0,fs*1.2],
+    [top_perimeter_wall,fs*1.2],
+    [top_perimeter_wall,fs*1],
+    [length*0.46,fs*1],
+    [length*0.46,fs*1.7],
+    [length*0.38,fs*1.7],
+    [length*0.38,fs*2.2],
+    [length*0.38+top_perimeter_wall,fs*2.2],
+    [length*0.38+top_perimeter_wall,fs*2],
+    [length*0.46,fs*2],
+    [length*0.46,fs*2.7],
+    [length*0.41,fs*2.7],
+    [length*0.41,fs*3.2],
+    [length*0.41+top_perimeter_wall,fs*3.2],
+    [length*0.41+top_perimeter_wall,fs*3],
+    [length*0.83,fs*3],
+    [length*0.83,fs*3.2],
+    [length*0.83+top_perimeter_wall,fs*3.2],
+    [length*0.83+top_perimeter_wall,fs*2],
+    [length-top_perimeter_wall,fs*2],
+    [length-top_perimeter_wall,fs*2.2],
+    [length,fs*2.2],
+    [length,0]]);
+}
+
+
+if(!_CHOPPA)
+CLA();
+
+
+// choppa choppa
+if(_CHOPPA)
+//for(flrv = concat([for(i=[0:5]) [i,i*fs,fs,true]],[[7,6*fs,length,false]])) {
+for(flrv = [[0,0,6*fs,true],[1,6*fs,length,false]]) {
+    flr = flrv[0];
+    flrh = flrv[1];
+    flrl = flrv[2];
+    flrc = flrv[3];
+    translate([flr/2*length,flr%2*length,-flrh]) {
+        // stacking hooks
+        if(flrc) {
+            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),flrh+flrl])
+            linear_extrude(choppa_stacker)
+            translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
+            difference() {
+                // magic number to make them fit
+                offset(r=-0.2)
+                void_hole();
+                offset(r=-void_wall)
+                void_hole();
+            }
+            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),flrh+flrl])
+            mirror([0,0,1])
+            // fix magic number for scale
+            linear_extrude(fs/4,scale=length/2/sin(60)*sin(30)/(length/2/sin(60)*sin(30)-void_wall))
+            translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
+            difference() {
+                void_hole();
+                offset(r=-void_wall)
+                void_hole();
+            }
+        }
+        *if(flrc) {
+            translate([0,0,flrl-fs])
+            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
+            for(ang = [0,120,240]) {
+                rotate(ang,[0,0,1])
+                translate([length/2 - top_hole_nose_inset*corner_win*sin(30),0,fs]) {
+                    mirror([0,0,1])
+                    translate([top_hole_nose_inset/4,0])
+                    linear_extrude(fs/2,scale=0)
+                    translate([-top_hole_nose_inset/4,0])
+                    square([top_hole_nose_inset/2,top_hole_nose_inset/2],center=true);
+                    translate([0,0,fs/8 - 0.01])
+                    cube([top_hole_nose_inset/3,top_hole_nose_inset/2,fs/4],center=true);
+                }
+            }
+        }
+        intersection() {
+            translate([0,0,flrh])
+                cube([length,length,flrl]);
+            CLA();
+        }
+    }
+}
+
+*tapertower(200, 100, 20)
+square([100,100], center=true);
+
+module void_hole() {
+    offset(r=void_wall, $fn=20)
+    offset(r=-void_wall*2)
     polygon([
         [0,top_hole_nose_inset*corner_win],
         [0,length - top_hole_nose_inset*corner_win],
@@ -196,28 +343,7 @@ difference() {
         [top_hole_nose_inset*corner_win*cos(30),
             top_hole_nose_inset*corner_win*sin(30)],
         ]);
-        
-    // windows
-    if(_WINDOWS)
-    for(side = windows) {
-        translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
-        rotate(side[0],[0,0,1])
-        translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
-        for(wins = side[1]) {
-            translate([0,0,bot_size - fs*wins[0]])
-            winrow(wins[1]);
-        }
-    };
-
-    if(_PLAQUE) {
-        rotate(240,[0,0,1])
-        cube([cos(30)*length*2 - top_perimeter_wall*2, length*2, length*4],center=true);
-    }
 }
-
-*tapertower(200, 100, 20)
-square([100,100], center=true);
-
 module tapertower(h, w, a) {
     y = w / 2 / sin(90 - a) * sin(a);
     x = h - y;
@@ -381,6 +507,7 @@ module corner(t) {
             [top_hole_nose_inset*win*sin(60),top_hole_nose_inset*win*cos(60)-0.01],
             [top_hole_nose_inset*wout*sin(60),top_hole_nose_inset*wout*cos(60)-0.01],
             [-0.01,top_hole_nose_inset*wout]]);
+        if(!_PRINTABLE_BALCONIES)
         color("pink")
         //translate([0,0,-fs/6])
         linear_extrude(whi)
@@ -505,8 +632,6 @@ module top() {
             
     }
     // add stair steps
-    step_h = (depth - top_hole_nose_inset)*sin(30)/top_hole_steps;
-    step_l = tan(30)*(depth - top_hole_nose_inset)/2/top_hole_steps;
     color("pink")
     intersection() {
         translate([depth - top_hole_nose_inset,length,0])
@@ -553,7 +678,7 @@ module base() {
         
         // in loving memory
         if(_LOVINGTEXT) {
-            $fn=30;
+            $fn=10;
             tsize = length/9.5;
             translate([tsize*4.1,length/2,-0.01])
             rotate(90,[0,0,1])
