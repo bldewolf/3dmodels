@@ -30,6 +30,9 @@ void_wall = min(top_perimeter_wall,2);
 // floor size
 fs = top_size / 2.8;
 choppa_stacker = min(fs/2,10);
+// 0.2 for 0.2, 0.32 for 0.32??
+choppa_fuzz = 0.4;
+choppa_focus = -1; // this picks which floor to render, -1 for all
 
 // this is not actually the bottom size.  I should get rid of this
 bot_size = (botfl + 0.2)*fs;
@@ -231,6 +234,18 @@ module CLA() {
             rotate(240,[0,0,1])
             cube([cos(30)*length*2 - top_perimeter_wall*2, length*2, length*4],center=true);
         }
+
+        // inner letterings
+        if(_VOID && _CHOPPA)
+        for(f = [1:botfl-1]) {
+            color("blue")
+            translate([void_wall-0.2,length/2/sin(60)*cos(30),0])
+            rotate(90,[0,0,1])
+            rotate(90,[1,0,0])
+            linear_extrude(void_wall)
+            translate([0,fs*f-3*fs/4])
+            text(text=str(f),size=fs/2,font="Centaur MT:style=Bold");
+        }
     }
 
     // registrar's silhouette
@@ -271,56 +286,59 @@ CLA();
 
 // choppa choppa
 if(_CHOPPA)
-//for(flrv = concat([for(i=[0:5]) [i,i*fs,fs,true]],[[7,6*fs,length,false]])) {
-for(flrv = [[0,0,6*fs,true],[1,6*fs,length,false]]) {
+for(flrv = concat([for(i=[0:5]) [i,i*fs,fs,true]],[[6,6*fs,length,false]])) {
+//for(flrv = [[0,0,6*fs,true],[1,6*fs,length,false]]) {
     flr = flrv[0];
     flrh = flrv[1];
     flrl = flrv[2];
     flrc = flrv[3];
-    translate([flr/2*length,flr%2*length,-flrh]) {
-        // stacking hooks
-        if(flrc) {
-            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),flrh+flrl])
-            linear_extrude(choppa_stacker)
-            translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
-            difference() {
-                // magic number to make them fit
-                offset(r=-0.2)
-                void_hole();
-                offset(r=-void_wall)
-                void_hole();
-            }
-            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),flrh+flrl])
-            mirror([0,0,1])
-            // fix magic number for scale
-            linear_extrude(fs/4,scale=length/2/sin(60)*sin(30)/(length/2/sin(60)*sin(30)-void_wall))
-            translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
-            difference() {
-                void_hole();
-                offset(r=-void_wall)
-                void_hole();
-            }
-        }
-        *if(flrc) {
-            translate([0,0,flrl-fs])
-            translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
-            for(ang = [0,120,240]) {
-                rotate(ang,[0,0,1])
-                translate([length/2 - top_hole_nose_inset*corner_win*sin(30),0,fs]) {
-                    mirror([0,0,1])
-                    translate([top_hole_nose_inset/4,0])
-                    linear_extrude(fs/2,scale=0)
-                    translate([-top_hole_nose_inset/4,0])
-                    square([top_hole_nose_inset/2,top_hole_nose_inset/2],center=true);
-                    translate([0,0,fs/8 - 0.01])
-                    cube([top_hole_nose_inset/3,top_hole_nose_inset/2,fs/4],center=true);
+    if(choppa_focus == -1 || flr == choppa_focus) {
+        translate([flr/2*length,flr%2*length,-flrh]) {
+            // stacking hooks
+            if(flrc) {
+                translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),flrh+flrl])
+                linear_extrude(choppa_stacker,scale=(depth-void_wall-choppa_fuzz*2)/(depth-void_wall-choppa_fuzz))
+                translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
+                difference() {
+                    // magic number to make them fit
+                    offset(r=-choppa_fuzz)
+                    void_hole();
+                    offset(r=-void_wall)
+                    void_hole();
+                }
+                translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),flrh+flrl])
+                mirror([0,0,1])
+                // fix magic number for scale
+                linear_extrude(fs/4,scale=length/2/sin(60)*sin(30)/(length/2/sin(60)*sin(30)-void_wall))
+                translate([-length/2/sin(60)*sin(30),-length/2/sin(60)*cos(30),0])
+                difference() {
+                    void_hole();
+                    offset(r=-void_wall)
+                    void_hole();
                 }
             }
-        }
-        intersection() {
-            translate([0,0,flrh])
-                cube([length,length,flrl]);
-            CLA();
+            // old bad stack hooks
+            *if(flrc) {
+                translate([0,0,flrl-fs])
+                translate([length/2/sin(60)*sin(30),length/2/sin(60)*cos(30),0])
+                for(ang = [0,120,240]) {
+                    rotate(ang,[0,0,1])
+                    translate([length/2 - top_hole_nose_inset*corner_win*sin(30),0,fs]) {
+                        mirror([0,0,1])
+                        translate([top_hole_nose_inset/4,0])
+                        linear_extrude(fs/2,scale=0)
+                        translate([-top_hole_nose_inset/4,0])
+                        square([top_hole_nose_inset/2,top_hole_nose_inset/2],center=true);
+                        translate([0,0,fs/8 - 0.01])
+                        cube([top_hole_nose_inset/3,top_hole_nose_inset/2,fs/4],center=true);
+                    }
+                }
+            }
+            intersection() {
+                translate([0,0,flrh])
+                    cube([length,length,flrl]);
+                CLA();
+            }
         }
     }
 }
